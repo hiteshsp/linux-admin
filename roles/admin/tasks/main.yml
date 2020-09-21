@@ -1,0 +1,36 @@
+---
+# tasks file for admin
+
+- name: Make sure we have a 'wheel' group
+  group:
+    name: wheel
+    state: present
+
+- name: Allow wheel group to have passwordless sudo
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%wheel'
+    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+
+- name: Create DevOps user group
+  group:
+    name: devops
+    state: present
+
+- name: Create linux users
+  user: 
+    name: "{{item}}"
+    shell: /bin/bash
+    comment: "DevOps Training"
+    groups: devops,wheel
+    password: '!'
+    password_lock: yes
+  with_items: "{{users}}"
+
+- name: Set authorized key taken from file
+  authorized_key:
+    user: "{{item}}"
+    state: present
+    key: "{{ lookup('file', '{{item}}.pub' ) }}"
+  with_items: "{{users}}" 
